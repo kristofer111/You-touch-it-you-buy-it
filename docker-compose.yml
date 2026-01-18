@@ -95,7 +95,7 @@ services:
   wrapper-api:
     container_name: wrapper-api
     build:
-      context: ./WrapperAPI
+      context: Gateway
       dockerfile: Dockerfile
     ports:
       - "8000:8000"

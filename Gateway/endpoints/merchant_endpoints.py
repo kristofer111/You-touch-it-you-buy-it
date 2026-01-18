@@ -1,5 +1,5 @@
 ﻿from flask import request, Blueprint, jsonify
-from WrapperAPI.clients.merchant_client import MerchantClient
+from Gateway.clients.merchant_client import MerchantClient
 
 merchant_blueprint = Blueprint('merchant_endpoints', __name__)
 

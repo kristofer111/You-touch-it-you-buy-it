@@ -1,8 +1,8 @@
 ﻿from flask import Flask
-from WrapperAPI.endpoints.merchant_endpoints import merchant_blueprint
-from WrapperAPI.endpoints.buyer_endpoints import buyer_blueprint
-from WrapperAPI.endpoints.product_endpoints import product_blueprint
-from WrapperAPI.endpoints.order_endpoints import order_blueprint
+from Gateway.endpoints.merchant_endpoints import merchant_blueprint
+from Gateway.endpoints.buyer_endpoints import buyer_blueprint
+from Gateway.endpoints.product_endpoints import product_blueprint
+from Gateway.endpoints.order_endpoints import order_blueprint
 
 app = Flask(__name__)
 

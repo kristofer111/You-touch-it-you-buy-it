@@ -1,15 +1,13 @@
 ﻿from flask import request, Blueprint, jsonify
-from WrapperAPI.clients.order_client import OrderClient
+from Gateway.clients.buyer_client import BuyerClient
+
+buyer_blueprint = Blueprint('buyer_endpoints', __name__)
+buyer_client = BuyerClient()
 
 
-order_blueprint = Blueprint('order_endpoints', __name__)
-
-order_client = OrderClient()
-
-
-@order_blueprint.route('/orders/<string:order_id>', methods=['GET'])
-def get_order_by_id(order_id):
-    response = order_client.get_order_by_id(order_id)
+@buyer_blueprint.route('/buyers/<string:buyer_id>', methods=['GET'])
+def get_buyer_by_id(buyer_id):
+    response = buyer_client.get_buyer_by_id(buyer_id)
 
     if response['status_code'] != 200:
         message = response['data']['msg']
@@ -18,11 +16,10 @@ def get_order_by_id(order_id):
 
     return jsonify(response['data']), 200
 
-
-@order_blueprint.route('/orders', methods=['POST'])
-def create_order():
+@buyer_blueprint.route('/buyers', methods=['POST'])
+def create_buyer():
     req_body = request.get_json()
-    response = order_client.create_new_order(req_body)
+    response = buyer_client.create_new_buyer(req_body)
 
     if response['status_code'] != 201:
         message = response['data']['msg']

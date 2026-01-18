@@ -1,15 +1,15 @@
 ﻿from flask import request, Blueprint, jsonify
-from WrapperAPI.clients.inventory_client import InventoryClient
+from Gateway.clients.order_client import OrderClient
 
 
-product_blueprint = Blueprint('product_endpoints', __name__)
+order_blueprint = Blueprint('order_endpoints', __name__)
 
-inventory_client = InventoryClient()
+order_client = OrderClient()
 
 
-@product_blueprint.route('/products/<string:product_id>', methods=['GET'])
-def get_product_by_id(product_id):
-    response = inventory_client.get_product_by_id(product_id)
+@order_blueprint.route('/orders/<string:order_id>', methods=['GET'])
+def get_order_by_id(order_id):
+    response = order_client.get_order_by_id(order_id)
 
     if response['status_code'] != 200:
         message = response['data']['msg']
@@ -18,10 +18,11 @@ def get_product_by_id(product_id):
 
     return jsonify(response['data']), 200
 
-@product_blueprint.route('/products', methods=['POST'])
-def create_product():
+
+@order_blueprint.route('/orders', methods=['POST'])
+def create_order():
     req_body = request.get_json()
-    response = inventory_client.create_new_product(req_body)
+    response = order_client.create_new_order(req_body)
 
     if response['status_code'] != 201:
         message = response['data']['msg']
@@ -29,6 +30,7 @@ def create_product():
         return jsonify({'msg': message, 'status': status}), status
 
     return jsonify({'new_id': response['data']['new_id'], 'status': 201}), 201
+
 
 
 
