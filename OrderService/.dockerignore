@@ -1,0 +1,8 @@
+﻿app
+*.pyc
+__pycache__/
+.git
+.vscode/
+venv
+.idea
+.vscode

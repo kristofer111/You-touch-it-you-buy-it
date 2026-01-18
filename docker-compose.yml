@@ -1,0 +1,244 @@
+﻿
+services:
+
+  merchant-service:
+    container_name: merchant-service
+    build:
+      context: ./MerchantService
+      dockerfile: Dockerfile
+    working_dir: /app
+    environment:
+      - FLASK_APP=MerchantService.app
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=8000
+    networks:
+      - microservices-network
+    depends_on:
+      merchant-service-db:
+        condition: service_healthy
+
+  buyer-service:
+    container_name: buyer-service
+    build:
+      context: ./BuyerService
+      dockerfile: Dockerfile
+    working_dir: /app
+    environment:
+      - FLASK_APP=BuyerService.app
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=8000
+    networks:
+      - microservices-network
+    depends_on:
+      buyer-service-db:
+        condition: service_healthy
+
+  inventory-service:
+    container_name: inventory-service
+    build:
+      context: ./InventoryService
+      dockerfile: Dockerfile
+    working_dir: /app
+    environment:
+      - FLASK_APP=InventoryService.app
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=8000
+    networks:
+      - microservices-network
+    depends_on:
+      inventory-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  order-service:
+    container_name: order-service
+    build:
+      context: ./OrderService
+      dockerfile: Dockerfile
+    working_dir: /app
+    environment:
+      - FLASK_APP=OrderService.app
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=8000
+    networks:
+      - microservices-network
+    depends_on:
+      order-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  payment-service:
+    container_name: payment-service
+    build:
+      context: ./PaymentService
+      dockerfile: Dockerfile
+    networks:
+      - microservices-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      payment-service-db:
+        condition: service_healthy
+
+  email-service:
+    environment:
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+    build:
+      context: ./EmailService
+      dockerfile: Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  wrapper-api:
+    container_name: wrapper-api
+    build:
+      context: ./WrapperAPI
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    environment:
+      - FLASK_APP=WrapperAPI.app
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=8000
+    networks:
+      - microservices-network
+      - wrapper-network
+    depends_on:
+      - merchant-service
+      - buyer-service
+      - inventory-service
+      - order-service
+
+
+  rabbitmq:
+    image: "rabbitmq:management"
+    container_name: rabbitmq
+    ports:
+      - "8080:15672"
+      - "7654:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - microservices-network
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "bash", "-c", "rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_listener 5672"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 35s
+
+
+  buyer-service-db:
+    container_name: buyer-service-db
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Buyers
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
+    volumes:
+      - buyer-service-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  merchant-service-db:
+    container_name: merchant-service-db
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Merchants
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
+    volumes:
+      - merchant-service-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  inventory-service-db:
+    container_name: inventory-service-db
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Inventory
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
+    volumes:
+      - inventory-service-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  order-service-db:
+    container_name: order-service-db
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Orders
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
+    volumes:
+      - order-service-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  payment-service-db:
+    container_name: payment-service-db
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Payments
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
+    volumes:
+      - payment-service-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+
+networks:
+  microservices-network:
+    driver: bridge
+  wrapper-network:
+    driver: bridge
+
+
+volumes:
+  buyer-service-data:
+  merchant-service-data:
+  inventory-service-data:
+  order-service-data:
+  payment-service-data:
+  rabbitmq-data:
+
+
